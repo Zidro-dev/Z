@@ -25,6 +25,11 @@ export const AnimePoster: React.FC<AnimePosterProps> = ({
   const [hasError, setHasError] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
 
+  React.useEffect(() => {
+    setHasError(false);
+    setIsLoaded(false);
+  }, [src]);
+
   return (
     <div
       className={`relative overflow-hidden bg-[#141519] flex items-center justify-center select-none ${className}`}
