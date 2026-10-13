@@ -1,0 +1,6 @@
+{
+  "name": "AniRoll - Anime Ko'rish Platformasi",
+  "description": "Crunchyroll uslubidagi zamonaviy anime oqimli platformasi: yangi qismlar, o'zbekcha dublaj va subtitrlar, video pleyer va shaxsiy tomosha ro'yxati.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
