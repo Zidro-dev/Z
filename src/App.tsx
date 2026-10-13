@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Header } from './components/Header';
 import { HeroBanner } from './components/HeroBanner';
@@ -19,17 +19,42 @@ import { TopAnimeView } from './components/TopAnimeView';
 import { Footer } from './components/Footer';
 import { AuthModal } from './components/AuthModal';
 import { UserProfileModal } from './components/UserProfileModal';
+import { AdminPanelModal } from './components/AdminPanelModal';
 import { INITIAL_ANIME_LIST, INITIAL_COMMENTS } from './data/animeData';
-import { Anime, UserComment, WatchHistoryItem } from './types/anime';
-import { Sparkles, Flame, CheckCircle } from 'lucide-react';
+import { Anime, Episode, UserComment, WatchHistoryItem } from './types/anime';
+import { Sparkles, Flame, CheckCircle, Ban, AlertTriangle } from 'lucide-react';
 
 function AniRollApp() {
-  const { user, profile, updateUserProfile } = useAuth();
+  const {
+    user,
+    profile,
+    updateUserProfile,
+    isOwner,
+    isAdmin,
+    customEpisodes,
+    logout,
+  } = useAuth();
 
-  const [animes] = useState<Anime[]>(INITIAL_ANIME_LIST);
+  const [baseAnimes, setBaseAnimes] = useState<Anime[]>(INITIAL_ANIME_LIST);
   const [currentTab, setCurrentTab] = useState<'home' | 'catalog' | 'simulcast' | 'watchlist' | 'top'>('home');
   const [catalogGenre, setCatalogGenre] = useState<string>('Barchasi');
   const [catalogDubOnly, setCatalogDubOnly] = useState<boolean>(false);
+
+  // Merge dynamic episodes added by Admin / Owner
+  const animes = useMemo(() => {
+    return baseAnimes.map((anime) => {
+      const added = customEpisodes[anime.id] || [];
+      if (added.length === 0) return anime;
+      const existingIds = new Set(anime.episodes.map((e) => e.id));
+      const newItems = added.filter((e) => !existingIds.has(e.id));
+      const combined = [...newItems, ...anime.episodes].sort((a, b) => a.episodeNumber - b.episodeNumber);
+      return {
+        ...anime,
+        episodes: combined,
+        totalEpisodes: Math.max(anime.totalEpisodes, combined.length),
+      };
+    });
+  }, [baseAnimes, customEpisodes]);
 
   // Watchlist persisted state
   const [watchlistIds, setWatchlistIds] = useState<string[]>(() => {
@@ -71,7 +96,7 @@ function AniRollApp() {
     }
   });
 
-  // Mega Fan subscription state (synced with profile if available)
+  // Mega Fan subscription state
   const [isMegaFan, setIsMegaFan] = useState<boolean>(() => {
     try {
       return localStorage.getItem('aniroll_megafan') === 'true';
@@ -93,6 +118,7 @@ function AniRollApp() {
   const [isPremiumOpen, setIsPremiumOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Sync profile Mega Fan status
@@ -134,7 +160,7 @@ function AniRollApp() {
     setToastMessage(msg);
     setTimeout(() => {
       setToastMessage(null);
-    }, 3000);
+    }, 3500);
   };
 
   const isInWatchlist = (animeId: string) => watchlistIds.includes(animeId);
@@ -189,6 +215,12 @@ function AniRollApp() {
   };
 
   const handleAddComment = (commentData: Omit<UserComment, 'id' | 'createdAt' | 'likes'>) => {
+    // Check if user is banned
+    if (profile?.isBanned) {
+      showToast("Hisobingiz bloklangan! Siz izoh qoldira olmaysiz.");
+      return;
+    }
+
     const newComment: UserComment = {
       ...commentData,
       userName: profile?.displayName || "Siz (Anime Muxlisi)",
@@ -232,6 +264,23 @@ function AniRollApp() {
     );
   };
 
+  const handleEpisodeAdded = (animeId: string, newEp: Episode) => {
+    setBaseAnimes((prev) =>
+      prev.map((a) => {
+        if (a.id === animeId) {
+          const updated = [...a.episodes, newEp].sort((x, y) => x.episodeNumber - y.episodeNumber);
+          return {
+            ...a,
+            episodes: updated,
+            totalEpisodes: Math.max(a.totalEpisodes, updated.length),
+          };
+        }
+        return a;
+      })
+    );
+    showToast(`"${newEp.titleUz}" qismi muvaffaqiyatli qo'shildi!`);
+  };
+
   const featuredAnimes = animes.filter((a) => a.isFeatured);
   const trendingAnimes = animes.filter((a) => a.isTrending);
   const newReleaseAnimes = animes.filter((a) => a.isNewRelease);
@@ -245,10 +294,39 @@ function AniRollApp() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Lockout screen if user is PERMANENTLY BANNED by Owner
+  if (profile?.isPermanentlyBanned) {
+    return (
+      <div className="min-h-screen bg-[#07080A] text-white flex flex-col items-center justify-center p-6 text-center select-none">
+        <div className="w-20 h-20 rounded-3xl bg-red-600/20 border-2 border-red-600 flex items-center justify-center text-red-500 mb-6 shadow-2xl shadow-red-600/30">
+          <Ban className="w-10 h-10" />
+        </div>
+        <h1 className="text-2xl sm:text-3xl font-black text-red-500 mb-2 tracking-tight">
+          Sizning hisobingiz butunlay cheklangan!
+        </h1>
+        <p className="text-sm text-neutral-300 max-w-md mb-3 leading-relaxed">
+          Sayt Egasi (Owner) tomonidan platformadan butunlay foydalanish huquqingiz to'xtatildi.
+        </p>
+        {profile.banReason && (
+          <div className="bg-red-950/40 border border-red-900/60 p-3.5 rounded-xl max-w-md mb-6 text-xs text-red-300">
+            <span className="font-bold">Bloklash sababi: </span>
+            <span>{profile.banReason}</span>
+          </div>
+        )}
+        <button
+          onClick={logout}
+          className="px-6 py-2.5 bg-[#191B22] hover:bg-[#232732] border border-[#232732] text-white rounded-xl text-xs font-bold transition-colors cursor-pointer"
+        >
+          Hisobdan chiqish
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#0B0C0E] text-[#F2F2F2] flex flex-col font-sans selection:bg-[#F47521] selection:text-black">
       
-      {/* 3-Zone Top Navigation Bar with Profile Integration */}
+      {/* 3-Zone Top Navigation Bar with Profile & Admin Integration */}
       <Header
         currentTab={currentTab}
         onSelectTab={(tab) => {
@@ -264,10 +342,28 @@ function AniRollApp() {
         onOpenPremium={() => setIsPremiumOpen(true)}
         onOpenAuth={() => setIsAuthModalOpen(true)}
         onOpenProfile={() => setIsProfileModalOpen(true)}
+        onOpenAdminPanel={() => setIsAdminPanelOpen(true)}
         userProfile={profile}
+        isAdmin={isAdmin}
+        isOwner={isOwner}
         isMegaFan={isMegaFan}
         watchlistCount={watchlistIds.length}
       />
+
+      {/* Warning banner if user is currently banned by admin */}
+      {profile?.isBanned && !profile?.isPermanentlyBanned && (
+        <div className="bg-red-950/90 border-b border-red-800/80 px-4 py-2.5 text-xs text-red-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-inner">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
+            <span>
+              <strong>Ogohlantirish:</strong> Hisobingiz administrator tomonidan cheklangan. Sabab: "{profile.banReason || "Qoidabuzarlik"}". Yangi izoh va fikr qoldirish cheklangan.
+            </span>
+          </div>
+          <span className="text-[11px] font-mono text-red-300 bg-red-900/40 px-2 py-0.5 rounded border border-red-800/60 shrink-0">
+            {profile.bannedBy || "Admin"}
+          </span>
+        </div>
+      )}
 
       {/* Main Content Area */}
       <main className="flex-1">
@@ -493,7 +589,7 @@ function AniRollApp() {
         onToggleMegaFan={handleToggleMegaFan}
       />
 
-      {/* Authentication Modal (Login / Register / Google / Guest) */}
+      {/* Authentication Modal */}
       <AuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
@@ -508,7 +604,18 @@ function AniRollApp() {
         historyCount={watchHistory.length}
         onOpenWatchlist={() => setIsWatchlistOpen(true)}
         onOpenPremium={() => setIsPremiumOpen(true)}
+        onOpenAdminPanel={() => setIsAdminPanelOpen(true)}
       />
+
+      {/* Admin / Owner Panel Modal */}
+      {isAdmin && (
+        <AdminPanelModal
+          isOpen={isAdminPanelOpen}
+          onClose={() => setIsAdminPanelOpen(false)}
+          animes={animes}
+          onEpisodeAdded={handleEpisodeAdded}
+        />
+      )}
 
       {/* Toast Feedback Notification */}
       {toastMessage && (

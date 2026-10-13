@@ -9,7 +9,7 @@ interface AuthModalProps {
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => {
-  const { loginWithEmail, registerWithEmail, loginWithGoogle, loginAsGuest } = useAuth();
+  const { loginWithEmail, registerWithEmail, loginWithGoogle, loginAsGuest, loginAsOwnerDemo } = useAuth();
 
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
@@ -322,6 +322,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
               />
             </svg>
             <span>Google orqali kirish</span>
+          </button>
+
+          {/* Quick Owner Access for yusufjonovm30@gmail.com */}
+          <button
+            type="button"
+            onClick={() => {
+              loginAsOwnerDemo();
+              onSuccess?.();
+              onClose();
+            }}
+            className="w-full py-2.5 bg-amber-400/10 hover:bg-amber-400/20 border border-amber-400/40 text-xs font-bold text-amber-400 rounded-xl flex items-center justify-center gap-2 transition-colors cursor-pointer"
+          >
+            <span>👑 Sayt Egasi sifatida kirish (Owner: yusufjonovm30@gmail.com)</span>
           </button>
 
           {/* Guest 1-Click Access */}

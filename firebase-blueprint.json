@@ -2,18 +2,45 @@
   "entities": {
     "UserProfile": {
       "title": "UserProfile",
-      "description": "User account profile with display preferences and membership status",
+      "description": "User account profile with role, display preferences and status",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
         "email": { "type": "string", "format": "email" },
         "displayName": { "type": "string" },
         "avatar": { "type": "string" },
+        "role": { "type": "string", "enum": ["owner", "admin", "user"] },
         "favoriteAnime": { "type": "string" },
         "isMegaFan": { "type": "boolean" },
+        "isBanned": { "type": "boolean" },
+        "isPermanentlyBanned": { "type": "boolean" },
+        "bannedBy": { "type": "string" },
+        "banReason": { "type": "string" },
+        "adminBanCount": { "type": "number" },
         "createdAt": { "type": "string" }
       },
       "required": ["id", "email", "displayName"]
+    },
+    "AddedEpisode": {
+      "title": "AddedEpisode",
+      "description": "New episode added by Admin or Owner",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "animeId": { "type": "string" },
+        "episodeNumber": { "type": "number" },
+        "title": { "type": "string" },
+        "titleUz": { "type": "string" },
+        "duration": { "type": "string" },
+        "durationSec": { "type": "number" },
+        "thumbnail": { "type": "string" },
+        "description": { "type": "string" },
+        "videoUrl": { "type": "string" },
+        "releaseDate": { "type": "string" },
+        "addedBy": { "type": "string" },
+        "addedAt": { "type": "string" }
+      },
+      "required": ["id", "animeId", "episodeNumber", "titleUz", "videoUrl"]
     },
     "WatchlistItem": {
       "title": "WatchlistItem",
@@ -62,6 +89,10 @@
     "/users/{userId}": {
       "schema": "UserProfile",
       "description": "User profile document"
+    },
+    "/added_episodes/{episodeId}": {
+      "schema": "AddedEpisode",
+      "description": "New episodes published by admins or owner"
     },
     "/users/{userId}/watchlist/{animeId}": {
       "schema": "WatchlistItem",

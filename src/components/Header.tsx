@@ -1,5 +1,4 @@
-import React from 'react';
-import { Search, Bookmark, Sparkles, User, Flame } from 'lucide-react';
+import { Search, Bookmark, Sparkles, User, Flame, Crown, Shield } from 'lucide-react';
 
 interface HeaderProps {
   currentTab: 'home' | 'catalog' | 'simulcast' | 'watchlist' | 'top';
@@ -9,7 +8,10 @@ interface HeaderProps {
   onOpenPremium: () => void;
   onOpenAuth: () => void;
   onOpenProfile: () => void;
+  onOpenAdminPanel?: () => void;
   userProfile?: { displayName: string; avatar: string } | null;
+  isAdmin?: boolean;
+  isOwner?: boolean;
   isMegaFan: boolean;
   watchlistCount: number;
 }
@@ -22,7 +24,10 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenPremium,
   onOpenAuth,
   onOpenProfile,
+  onOpenAdminPanel,
   userProfile,
+  isAdmin,
+  isOwner,
   isMegaFan,
   watchlistCount,
 }) => {
@@ -153,6 +158,21 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <User className="w-3.5 h-3.5 text-[#F47521]" />
               <span>Kirish</span>
+            </button>
+          )}
+
+          {/* Admin / Owner Control Button */}
+          {isAdmin && onOpenAdminPanel && (
+            <button
+              onClick={onOpenAdminPanel}
+              className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-all cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
+                isOwner
+                  ? 'bg-amber-400/15 border-amber-400/50 text-amber-300 hover:bg-amber-400/25'
+                  : 'bg-[#F47521]/15 border-[#F47521]/50 text-[#F47521] hover:bg-[#F47521]/25'
+              }`}
+            >
+              {isOwner ? <Crown className="w-3.5 h-3.5 fill-amber-400 text-amber-400" /> : <Shield className="w-3.5 h-3.5" />}
+              <span className="hidden sm:inline">{isOwner ? 'Owner Paneli' : 'Admin Paneli'}</span>
             </button>
           )}
 

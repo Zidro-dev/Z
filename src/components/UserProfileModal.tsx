@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, User, Mail, Sparkles, LogOut, Check, Flame, Bookmark, History, Edit3 } from 'lucide-react';
+import { X, User, Mail, Sparkles, LogOut, Check, Flame, Bookmark, History, Edit3, Crown, Shield } from 'lucide-react';
 import { useAuth, ANIME_AVATARS } from '../context/AuthContext';
 
 interface UserProfileModalProps {
@@ -9,6 +9,7 @@ interface UserProfileModalProps {
   historyCount: number;
   onOpenWatchlist: () => void;
   onOpenPremium: () => void;
+  onOpenAdminPanel?: () => void;
 }
 
 export const UserProfileModal: React.FC<UserProfileModalProps> = ({
@@ -18,8 +19,9 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   historyCount,
   onOpenWatchlist,
   onOpenPremium,
+  onOpenAdminPanel,
 }) => {
-  const { profile, logout, updateUserProfile } = useAuth();
+  const { profile, isOwner, isAdmin, logout, updateUserProfile } = useAuth();
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState(profile?.displayName || '');
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
@@ -107,14 +109,27 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             </p>
           </div>
 
-          {/* Membership Badge */}
-          <div className="pt-1">
-            {profile.isMegaFan ? (
+          {/* Membership & Role Badges */}
+          <div className="pt-1 flex flex-wrap items-center justify-center gap-2">
+            {isOwner && (
+              <span className="px-3 py-1 rounded-full bg-amber-400 text-black text-xs font-black inline-flex items-center gap-1 shadow-md shadow-amber-400/20">
+                <Crown className="w-3.5 h-3.5 fill-black" />
+                <span>Sayt Egasi (Owner)</span>
+              </span>
+            )}
+            {profile.role === 'admin' && !isOwner && (
+              <span className="px-3 py-1 rounded-full bg-[#F47521] text-black text-xs font-bold inline-flex items-center gap-1">
+                <Shield className="w-3.5 h-3.5" />
+                <span>Admin</span>
+              </span>
+            )}
+            {profile.isMegaFan && !isOwner && (
               <span className="px-3 py-1 rounded-full bg-amber-400/15 border border-amber-400/40 text-amber-400 text-xs font-bold inline-flex items-center gap-1.5 shadow-sm">
                 <Flame className="w-3.5 h-3.5 fill-amber-400" />
                 <span>AniRoll Mega Fan VIP</span>
               </span>
-            ) : (
+            )}
+            {!profile.isMegaFan && !isOwner && (
               <button
                 onClick={() => {
                   onClose();
@@ -127,6 +142,20 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
               </button>
             )}
           </div>
+
+          {/* Admin / Owner Panel Button */}
+          {isAdmin && onOpenAdminPanel && (
+            <button
+              onClick={() => {
+                onClose();
+                onOpenAdminPanel();
+              }}
+              className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500/20 to-[#F47521]/20 hover:from-amber-500/30 hover:to-[#F47521]/30 border border-amber-500/40 text-xs font-bold text-amber-300 flex items-center justify-center gap-2 cursor-pointer transition-all shadow-md"
+            >
+              {isOwner ? <Crown className="w-4 h-4 fill-amber-400 text-amber-400" /> : <Shield className="w-4 h-4 text-[#F47521]" />}
+              <span>{isOwner ? '👑 Owner Boshqaruv Paneliga O‘tish' : '🛡️ Admin Paneliga O‘tish'}</span>
+            </button>
+          )}
 
         </div>
 
