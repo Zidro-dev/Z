@@ -20,9 +20,12 @@ import { Footer } from './components/Footer';
 import { AuthModal } from './components/AuthModal';
 import { UserProfileModal } from './components/UserProfileModal';
 import { AdminPanelModal } from './components/AdminPanelModal';
+import { EditAnimeModal } from './components/EditAnimeModal';
 import { INITIAL_ANIME_LIST, INITIAL_COMMENTS } from './data/animeData';
 import { Anime, Episode, UserComment, WatchHistoryItem } from './types/anime';
 import { Sparkles, Flame, CheckCircle, Ban, AlertTriangle } from 'lucide-react';
+import { doc, setDoc, getDocs, collection } from 'firebase/firestore';
+import { db } from './lib/firebase';
 
 function AniRollApp() {
   const {
@@ -35,7 +38,23 @@ function AniRollApp() {
     logout,
   } = useAuth();
 
-  const [baseAnimes, setBaseAnimes] = useState<Anime[]>(INITIAL_ANIME_LIST);
+  const [baseAnimes, setBaseAnimes] = useState<Anime[]>(() => {
+    try {
+      const saved = localStorage.getItem('aniroll_custom_animes');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return INITIAL_ANIME_LIST.map((initial) => {
+            const found = parsed.find((p: any) => p.id === initial.id);
+            return found ? { ...initial, ...found } : initial;
+          });
+        }
+      }
+    } catch {}
+    return INITIAL_ANIME_LIST;
+  });
+
+  const [editingAnime, setEditingAnime] = useState<Anime | null>(null);
   const [currentTab, setCurrentTab] = useState<'home' | 'catalog' | 'simulcast' | 'watchlist' | 'top'>('home');
   const [catalogGenre, setCatalogGenre] = useState<string>('Barchasi');
   const [catalogDubOnly, setCatalogDubOnly] = useState<boolean>(false);
@@ -281,6 +300,75 @@ function AniRollApp() {
     showToast(`"${newEp.titleUz}" qismi muvaffaqiyatli qo'shildi!`);
   };
 
+  // Fetch remote anime customizations from Firestore
+  useEffect(() => {
+    const fetchRemoteCustomizations = async () => {
+      try {
+        const snap = await getDocs(collection(db, 'anime_customizations'));
+        if (!snap.empty) {
+          const overrides: Record<string, Partial<Anime>> = {};
+          snap.forEach((docSnap) => {
+            overrides[docSnap.id] = docSnap.data() as Partial<Anime>;
+          });
+          setBaseAnimes((prev) =>
+            prev.map((anime) => {
+              if (overrides[anime.id]) {
+                return { ...anime, ...overrides[anime.id] };
+              }
+              return anime;
+            })
+          );
+        }
+      } catch (e) {
+        console.warn("Firestore anime customizations fetch skipped:", e);
+      }
+    };
+    fetchRemoteCustomizations();
+  }, []);
+
+  // Save anime modifications (Total episodes, poster image, metadata)
+  const handleSaveAnimeEdit = async (updatedAnime: Anime) => {
+    setBaseAnimes((prev) => {
+      const next = prev.map((a) => (a.id === updatedAnime.id ? updatedAnime : a));
+      try {
+        localStorage.setItem('aniroll_custom_animes', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+
+    if (selectedAnimeDetails?.id === updatedAnime.id) {
+      setSelectedAnimeDetails(updatedAnime);
+    }
+
+    try {
+      const animeDocRef = doc(db, 'anime_customizations', updatedAnime.id);
+      await setDoc(
+        animeDocRef,
+        {
+          totalEpisodes: updatedAnime.totalEpisodes,
+          posterUrl: updatedAnime.posterUrl,
+          bannerUrl: updatedAnime.bannerUrl,
+          title: updatedAnime.title,
+          originalTitle: updatedAnime.originalTitle,
+          synopsisUz: updatedAnime.synopsisUz,
+          status: updatedAnime.status,
+          season: updatedAnime.season,
+          year: updatedAnime.year,
+          hasUzbekDub: updatedAnime.hasUzbekDub,
+          hasUzbekSub: updatedAnime.hasUzbekSub,
+          accentColor: updatedAnime.accentColor,
+          updatedAt: new Date().toISOString(),
+          updatedBy: profile?.displayName || (isOwner ? 'Owner' : 'Admin'),
+        },
+        { merge: true }
+      );
+    } catch (err) {
+      console.warn("Firestore anime save error:", err);
+    }
+
+    showToast(`"${updatedAnime.title}" muvaffaqiyatli saqlandi!`);
+  };
+
   const featuredAnimes = animes.filter((a) => a.isFeatured);
   const trendingAnimes = animes.filter((a) => a.isTrending);
   const newReleaseAnimes = animes.filter((a) => a.isNewRelease);
@@ -377,6 +465,7 @@ function AniRollApp() {
               onOpenDetails={(anime) => setSelectedAnimeDetails(anime)}
               isInWatchlist={isInWatchlist}
               onToggleWatchlist={toggleWatchlist}
+              onEditAnime={(anime) => setEditingAnime(anime)}
             />
 
             {/* Carousel Rails (Crunchyroll Style) */}
@@ -392,6 +481,7 @@ function AniRollApp() {
                 isInWatchlist={isInWatchlist}
                 onToggleWatchlist={handleToggleWatchlistFromCard}
                 onViewAll={() => navigateToCatalogWithFilter('Barchasi')}
+                onEditAnime={(anime) => setEditingAnime(anime)}
               />
 
               {/* Row 2: Yangi Chiqqan Qismlar (Simulcast) */}
@@ -404,6 +494,7 @@ function AniRollApp() {
                 isInWatchlist={isInWatchlist}
                 onToggleWatchlist={handleToggleWatchlistFromCard}
                 onViewAll={() => setCurrentTab('simulcast')}
+                onEditAnime={(anime) => setEditingAnime(anime)}
               />
 
               {/* Mega Fan Promotional Ribbon */}
@@ -443,6 +534,7 @@ function AniRollApp() {
                 isInWatchlist={isInWatchlist}
                 onToggleWatchlist={handleToggleWatchlistFromCard}
                 onViewAll={() => navigateToCatalogWithFilter('Barchasi', true)}
+                onEditAnime={(anime) => setEditingAnime(anime)}
               />
 
               {/* Row 4: Shounen & Fantastika */}
@@ -455,6 +547,7 @@ function AniRollApp() {
                 isInWatchlist={isInWatchlist}
                 onToggleWatchlist={handleToggleWatchlistFromCard}
                 onViewAll={() => navigateToCatalogWithFilter('Shounen')}
+                onEditAnime={(anime) => setEditingAnime(anime)}
               />
 
             </div>
@@ -470,6 +563,7 @@ function AniRollApp() {
             onPlayAnime={handlePlayAnime}
             isInWatchlist={isInWatchlist}
             onToggleWatchlist={handleToggleWatchlistFromCard}
+            onEditAnime={(anime) => setEditingAnime(anime)}
             initialGenre={catalogGenre}
             initialDubOnly={catalogDubOnly}
           />
@@ -492,6 +586,7 @@ function AniRollApp() {
             onPlayAnime={handlePlayAnime}
             isInWatchlist={isInWatchlist}
             onToggleWatchlist={handleToggleWatchlistFromCard}
+            onEditAnime={(anime) => setEditingAnime(anime)}
           />
         )}
       </main>
@@ -536,6 +631,7 @@ function AniRollApp() {
           }}
           isInWatchlist={isInWatchlist(selectedAnimeDetails.id)}
           onToggleWatchlist={() => toggleWatchlist(selectedAnimeDetails)}
+          onEditAnime={(anime) => setEditingAnime(anime)}
           relatedAnimes={animes.filter(
             (a) =>
               a.id !== selectedAnimeDetails.id &&
@@ -614,6 +710,17 @@ function AniRollApp() {
           onClose={() => setIsAdminPanelOpen(false)}
           animes={animes}
           onEpisodeAdded={handleEpisodeAdded}
+          onEditAnime={(anime) => setEditingAnime(anime)}
+        />
+      )}
+
+      {/* Edit Anime Modal for Admin & Owner */}
+      {editingAnime && (
+        <EditAnimeModal
+          isOpen={Boolean(editingAnime)}
+          anime={editingAnime}
+          onClose={() => setEditingAnime(null)}
+          onSave={handleSaveAnimeEdit}
         />
       )}
 

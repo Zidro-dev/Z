@@ -9,6 +9,7 @@ interface CatalogViewProps {
   onPlayAnime: (anime: Anime) => void;
   isInWatchlist: (id: string) => boolean;
   onToggleWatchlist: (e: React.MouseEvent, anime: Anime) => void;
+  onEditAnime?: (anime: Anime) => void;
   initialGenre?: string;
   initialDubOnly?: boolean;
 }
@@ -32,6 +33,7 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
   onPlayAnime,
   isInWatchlist,
   onToggleWatchlist,
+  onEditAnime,
   initialGenre = 'Barchasi',
   initialDubOnly = false,
 }) => {
@@ -189,6 +191,7 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
               onPlay={onPlayAnime}
               isInWatchlist={isInWatchlist(anime.id)}
               onToggleWatchlist={onToggleWatchlist}
+              onEdit={onEditAnime}
             />
           ))}
         </div>

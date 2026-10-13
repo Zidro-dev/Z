@@ -12,6 +12,7 @@ interface AnimeRowProps {
   isInWatchlist: (id: string) => boolean;
   onToggleWatchlist: (e: React.MouseEvent, anime: Anime) => void;
   onViewAll?: () => void;
+  onEditAnime?: (anime: Anime) => void;
 }
 
 export const AnimeRow: React.FC<AnimeRowProps> = ({
@@ -23,6 +24,7 @@ export const AnimeRow: React.FC<AnimeRowProps> = ({
   isInWatchlist,
   onToggleWatchlist,
   onViewAll,
+  onEditAnime,
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -96,6 +98,7 @@ export const AnimeRow: React.FC<AnimeRowProps> = ({
               onPlay={onPlayAnime}
               isInWatchlist={isInWatchlist(anime.id)}
               onToggleWatchlist={onToggleWatchlist}
+              onEdit={onEditAnime}
             />
           </div>
         ))}

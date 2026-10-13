@@ -83,6 +83,22 @@
         "isSpoiler": { "type": "boolean" }
       },
       "required": ["animeId", "episodeNumber", "userId", "text"]
+    },
+    "AnimeCustomization": {
+      "title": "AnimeCustomization",
+      "description": "Customizations of anime metadata including total episode counts and posters",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "totalEpisodes": { "type": "number" },
+        "posterUrl": { "type": "string" },
+        "bannerUrl": { "type": "string" },
+        "title": { "type": "string" },
+        "status": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "updatedBy": { "type": "string" }
+      },
+      "required": ["totalEpisodes", "posterUrl"]
     }
   },
   "firestore": {
@@ -93,6 +109,10 @@
     "/added_episodes/{episodeId}": {
       "schema": "AddedEpisode",
       "description": "New episodes published by admins or owner"
+    },
+    "/anime_customizations/{animeId}": {
+      "schema": "AnimeCustomization",
+      "description": "Custom total episode count and poster images adjusted by admin or owner"
     },
     "/users/{userId}/watchlist/{animeId}": {
       "schema": "WatchlistItem",

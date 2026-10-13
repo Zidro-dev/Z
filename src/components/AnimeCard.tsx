@@ -1,7 +1,8 @@
 import React from 'react';
-import { Star, Plus, Check, Play, Headphones, Subtitles } from 'lucide-react';
+import { Star, Plus, Check, Play, Headphones, Subtitles, Sliders } from 'lucide-react';
 import { Anime } from '../types/anime';
 import { AnimePoster } from './AnimePoster';
+import { useAuth } from '../context/AuthContext';
 
 interface AnimeCardProps {
   anime: Anime;
@@ -9,6 +10,7 @@ interface AnimeCardProps {
   onPlay: (anime: Anime) => void;
   isInWatchlist: boolean;
   onToggleWatchlist: (e: React.MouseEvent, anime: Anime) => void;
+  onEdit?: (anime: Anime) => void;
   compact?: boolean;
 }
 
@@ -18,8 +20,11 @@ export const AnimeCard: React.FC<AnimeCardProps> = ({
   onPlay,
   isInWatchlist,
   onToggleWatchlist,
+  onEdit,
   compact = false,
 }) => {
+  const { isAdmin } = useAuth();
+
   return (
     <div
       onClick={() => onSelect(anime)}
@@ -43,17 +48,32 @@ export const AnimeCard: React.FC<AnimeCardProps> = ({
             <span className="text-[11px] font-mono font-bold text-neutral-300 bg-black/70 px-2 py-0.5 rounded">
               {anime.season}
             </span>
-            <button
-              onClick={(e) => onToggleWatchlist(e, anime)}
-              aria-label={isInWatchlist ? "Ro'yxatdan o'chirish" : "Ro'yxatga qo'shish"}
-              className={`p-1.5 rounded-full transition-colors cursor-pointer ${
-                isInWatchlist
-                  ? 'bg-[#F47521] text-black'
-                  : 'bg-black/80 text-white hover:bg-[#F47521] hover:text-black'
-              }`}
-            >
-              {isInWatchlist ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-            </button>
+            <div className="flex items-center gap-1.5">
+              {isAdmin && onEdit && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(anime);
+                  }}
+                  title="Animeni tahrirlash (qismlar soni va rasm)"
+                  aria-label="Animeni tahrirlash"
+                  className="p-1.5 rounded-full bg-amber-500/80 hover:bg-amber-400 text-black transition-colors cursor-pointer"
+                >
+                  <Sliders className="w-3.5 h-3.5" />
+                </button>
+              )}
+              <button
+                onClick={(e) => onToggleWatchlist(e, anime)}
+                aria-label={isInWatchlist ? "Ro'yxatdan o'chirish" : "Ro'yxatga qo'shish"}
+                className={`p-1.5 rounded-full transition-colors cursor-pointer ${
+                  isInWatchlist
+                    ? 'bg-[#F47521] text-black'
+                    : 'bg-black/80 text-white hover:bg-[#F47521] hover:text-black'
+                }`}
+              >
+                {isInWatchlist ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
 
           <div className="flex items-center justify-center">

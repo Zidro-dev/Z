@@ -15,6 +15,9 @@ import {
   ShieldCheck,
   UserX,
   Play,
+  Sliders,
+  Search,
+  Edit3,
 } from 'lucide-react';
 import { useAuth, OWNER_EMAIL } from '../context/AuthContext';
 import { Anime, Episode } from '../types/anime';
@@ -24,6 +27,7 @@ interface AdminPanelModalProps {
   onClose: () => void;
   animes: Anime[];
   onEpisodeAdded: (animeId: string, newEpisode: Episode) => void;
+  onEditAnime: (anime: Anime) => void;
 }
 
 export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
@@ -31,6 +35,7 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
   onClose,
   animes,
   onEpisodeAdded,
+  onEditAnime,
 }) => {
   const {
     profile,
@@ -44,7 +49,8 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
     addNewEpisode,
   } = useAuth();
 
-  const [activeTab, setActiveTab] = useState<'episodes' | 'bans' | 'admins'>('episodes');
+  const [activeTab, setActiveTab] = useState<'episodes' | 'animes' | 'bans' | 'admins'>('episodes');
+  const [animeSearchQuery, setAnimeSearchQuery] = useState('');
 
   // New episode form state
   const [selectedAnimeId, setSelectedAnimeId] = useState<string>(animes[0]?.id || 'solo-leveling');
@@ -234,10 +240,10 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
         )}
 
         {/* Tab Controls (Buttons with click handlers per 1.A) */}
-        <div className="flex items-center gap-2 p-3 bg-[#161820] border-b border-[#232732] text-xs font-bold">
+        <div className="flex items-center gap-2 p-3 bg-[#161820] border-b border-[#232732] text-xs font-bold overflow-x-auto">
           <button
             onClick={() => setActiveTab('episodes')}
-            className={`px-4 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-2 shrink-0 ${
               activeTab === 'episodes'
                 ? 'bg-[#F47521] text-black font-extrabold shadow-md'
                 : 'text-neutral-400 hover:text-white hover:bg-[#1E232F]'
@@ -248,8 +254,20 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
           </button>
 
           <button
+            onClick={() => setActiveTab('animes')}
+            className={`px-4 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-2 shrink-0 ${
+              activeTab === 'animes'
+                ? 'bg-[#F47521] text-black font-extrabold shadow-md'
+                : 'text-neutral-400 hover:text-white hover:bg-[#1E232F]'
+            }`}
+          >
+            <Sliders className="w-4 h-4" />
+            <span>Animelarni Tahrirlash ({animes.length})</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab('bans')}
-            className={`px-4 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-2 shrink-0 ${
               activeTab === 'bans'
                 ? 'bg-[#F47521] text-black font-extrabold shadow-md'
                 : 'text-neutral-400 hover:text-white hover:bg-[#1E232F]'
@@ -316,6 +334,20 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
                         </option>
                       ))}
                     </select>
+
+                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-[#232732]">
+                      <span className="text-[11px] text-neutral-400 font-mono">
+                        Jami: {targetAnime.totalEpisodes} qism ({targetAnime.status})
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => onEditAnime(targetAnime)}
+                        className="text-[11px] text-[#F47521] hover:text-[#FF8533] font-bold flex items-center gap-1 cursor-pointer bg-[#F47521]/10 px-2 py-1 rounded-md border border-[#F47521]/30 transition-colors"
+                      >
+                        <Sliders className="w-3 h-3" />
+                        <span>Qismlar soni va rasmni sozlash</span>
+                      </button>
+                    </div>
                   </div>
 
                   {/* Episode Number */}
@@ -432,6 +464,97 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
                 </div>
               </div>
             </form>
+          )}
+
+          {/* TAB: ANIME MANAGEMENT & EDITING */}
+          {activeTab === 'animes' && (
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#232732]">
+                <div>
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    <Sliders className="w-4 h-4 text-[#F47521]" />
+                    <span>Barcha Animelarni Tahrirlash va Sozlash</span>
+                  </h3>
+                  <p className="text-xs text-neutral-400">
+                    Har bir animening jami qismlar sonini belgilash, poster va banner rasmlarini o'zgartirish.
+                  </p>
+                </div>
+
+                <div className="relative w-full sm:w-64">
+                  <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={animeSearchQuery}
+                    onChange={(e) => setAnimeSearchQuery(e.target.value)}
+                    placeholder="Anime qidirish..."
+                    className="w-full bg-[#12141A] border border-[#232732] rounded-xl pl-8 pr-3 py-1.5 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-[#F47521]"
+                  />
+                </div>
+              </div>
+
+              {/* Anime List Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[480px] overflow-y-auto pr-1">
+                {animes
+                  .filter((a) =>
+                    a.title.toLowerCase().includes(animeSearchQuery.toLowerCase()) ||
+                    a.originalTitle.toLowerCase().includes(animeSearchQuery.toLowerCase()) ||
+                    a.genres.some((g) => g.toLowerCase().includes(animeSearchQuery.toLowerCase()))
+                  )
+                  .map((anime) => (
+                    <div
+                      key={anime.id}
+                      className="bg-[#191B22] border border-[#232732] hover:border-[#F47521]/50 rounded-xl p-3 flex gap-3 transition-all group"
+                    >
+                      {/* Thumbnail */}
+                      <div className="w-16 aspect-[3/4] rounded-lg overflow-hidden bg-black shrink-0 relative border border-[#2A2E3D]">
+                        <img
+                          src={anime.posterUrl}
+                          alt={anime.title}
+                          referrerPolicy="no-referrer"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+
+                      {/* Info & Edit Action */}
+                      <div className="flex-1 min-w-0 flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-start justify-between gap-1">
+                            <h4 className="text-xs font-bold text-white group-hover:text-[#F47521] transition-colors line-clamp-1">
+                              {anime.title}
+                            </h4>
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium shrink-0 ${
+                              anime.status === 'Davom etmoqda'
+                                ? 'bg-emerald-950/70 text-emerald-300 border border-emerald-800/50'
+                                : 'bg-neutral-800 text-neutral-300'
+                            }`}>
+                              {anime.status}
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-neutral-400 line-clamp-1">
+                            {anime.season} · {anime.year} · {anime.genres.slice(0, 2).join(', ')}
+                          </p>
+                        </div>
+
+                        <div className="mt-2 pt-2 border-t border-[#232732]/70 flex items-center justify-between">
+                          <div className="text-[11px] font-mono text-neutral-300">
+                            <span className="text-[#F47521] font-bold">Jami: {anime.totalEpisodes}</span> qism
+                            <span className="text-neutral-500 text-[10px] ml-1">({anime.episodes.length} ta ochiq)</span>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => onEditAnime(anime)}
+                            className="px-2.5 py-1 bg-[#F47521] hover:bg-[#FF8533] text-black text-xs font-bold rounded-lg flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                          >
+                            <Edit3 className="w-3 h-3 stroke-[2.5]" />
+                            <span>Tahrirlash</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
           )}
 
           {/* TAB 2: USER BAN SYSTEM */}

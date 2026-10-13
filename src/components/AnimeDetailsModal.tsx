@@ -1,7 +1,8 @@
 import React from 'react';
-import { X, Play, Plus, Check, Star, ShieldCheck, Film, Calendar, Users, Share2, Sparkles } from 'lucide-react';
+import { X, Play, Plus, Check, Star, ShieldCheck, Film, Calendar, Users, Share2, Sparkles, Sliders } from 'lucide-react';
 import { Anime, Episode } from '../types/anime';
 import { AnimePoster } from './AnimePoster';
+import { useAuth } from '../context/AuthContext';
 
 interface AnimeDetailsModalProps {
   anime: Anime;
@@ -11,6 +12,7 @@ interface AnimeDetailsModalProps {
   onToggleWatchlist: () => void;
   relatedAnimes: Anime[];
   onSelectRelated: (anime: Anime) => void;
+  onEditAnime?: (anime: Anime) => void;
 }
 
 export const AnimeDetailsModal: React.FC<AnimeDetailsModalProps> = ({
@@ -21,7 +23,9 @@ export const AnimeDetailsModal: React.FC<AnimeDetailsModalProps> = ({
   onToggleWatchlist,
   relatedAnimes,
   onSelectRelated,
+  onEditAnime,
 }) => {
+  const { isAdmin } = useAuth();
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 md:p-6">
       <div className="relative w-full max-w-4xl bg-[#141519] border border-[#232732] rounded-2xl overflow-hidden shadow-2xl my-8">
@@ -109,6 +113,16 @@ export const AnimeDetailsModal: React.FC<AnimeDetailsModalProps> = ({
               {isInWatchlist ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
               <span>{isInWatchlist ? "Ro'yxatda saqlangan" : "Ro'yxatga qo'shish"}</span>
             </button>
+            {isAdmin && onEditAnime && (
+              <button
+                onClick={() => onEditAnime(anime)}
+                className="px-4 py-2.5 rounded-lg border border-amber-500/50 bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 text-xs font-bold flex items-center gap-2 transition-colors cursor-pointer shadow-sm"
+                title="Qismlar soni va rasmni sozlash"
+              >
+                <Sliders className="w-4 h-4 text-amber-400" />
+                <span>Animeni tahrirlash</span>
+              </button>
+            )}
           </div>
 
           <div className="flex items-center gap-2 text-xs text-neutral-400">

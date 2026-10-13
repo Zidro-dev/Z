@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Plus, Check, Info, Star, Volume2, VolumeX, ShieldCheck, ChevronRight } from 'lucide-react';
+import { Play, Plus, Check, Info, Star, Volume2, VolumeX, ShieldCheck, ChevronRight, Sliders } from 'lucide-react';
 import { Anime } from '../types/anime';
 import { AnimePoster } from './AnimePoster';
+import { useAuth } from '../context/AuthContext';
 
 interface HeroBannerProps {
   featuredAnimes: Anime[];
@@ -9,6 +10,7 @@ interface HeroBannerProps {
   onOpenDetails: (anime: Anime) => void;
   isInWatchlist: (animeId: string) => boolean;
   onToggleWatchlist: (anime: Anime) => void;
+  onEditAnime?: (anime: Anime) => void;
 }
 
 export const HeroBanner: React.FC<HeroBannerProps> = ({
@@ -17,7 +19,9 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
   onOpenDetails,
   isInWatchlist,
   onToggleWatchlist,
+  onEditAnime,
 }) => {
+  const { isAdmin } = useAuth();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isMuted, setIsMuted] = useState(true);
 
@@ -127,6 +131,17 @@ export const HeroBanner: React.FC<HeroBannerProps> = ({
               <Info className="w-4 h-4" />
               <span>Batafsil ma'lumot</span>
             </button>
+
+            {isAdmin && onEditAnime && (
+              <button
+                onClick={() => onEditAnime(currentAnime)}
+                className="px-4 py-3 rounded-lg border border-amber-500/60 bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 text-sm font-semibold flex items-center gap-1.5 transition-colors cursor-pointer whitespace-nowrap"
+                title="Animeni tahrirlash (qismlar soni va rasm)"
+              >
+                <Sliders className="w-4 h-4 text-amber-400" />
+                <span>Animeni sozlash</span>
+              </button>
+            )}
           </div>
 
         </div>

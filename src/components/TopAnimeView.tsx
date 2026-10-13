@@ -1,7 +1,8 @@
 import React from 'react';
-import { Star, Trophy, Play, Plus, Check } from 'lucide-react';
+import { Star, Trophy, Play, Plus, Check, Sliders } from 'lucide-react';
 import { Anime } from '../types/anime';
 import { AnimePoster } from './AnimePoster';
+import { useAuth } from '../context/AuthContext';
 
 interface TopAnimeViewProps {
   animes: Anime[];
@@ -9,6 +10,7 @@ interface TopAnimeViewProps {
   onPlayAnime: (anime: Anime) => void;
   isInWatchlist: (id: string) => boolean;
   onToggleWatchlist: (e: React.MouseEvent, anime: Anime) => void;
+  onEditAnime?: (anime: Anime) => void;
 }
 
 export const TopAnimeView: React.FC<TopAnimeViewProps> = ({
@@ -17,7 +19,9 @@ export const TopAnimeView: React.FC<TopAnimeViewProps> = ({
   onPlayAnime,
   isInWatchlist,
   onToggleWatchlist,
+  onEditAnime,
 }) => {
+  const { isAdmin } = useAuth();
   const sortedByRating = [...animes].sort((a, b) => b.rating - a.rating);
 
   return (
@@ -101,6 +105,20 @@ export const TopAnimeView: React.FC<TopAnimeViewProps> = ({
 
               {/* Quick Actions */}
               <div className="flex items-center gap-2 shrink-0">
+                {isAdmin && onEditAnime && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEditAnime(anime);
+                    }}
+                    title="Animeni tahrirlash (qismlar soni va rasm)"
+                    aria-label="Animeni tahrirlash"
+                    className="p-2 rounded-lg border border-amber-500/50 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 transition-colors cursor-pointer"
+                  >
+                    <Sliders className="w-4 h-4" />
+                  </button>
+                )}
+
                 <button
                   onClick={(e) => onToggleWatchlist(e, anime)}
                   aria-label={inList ? "Ro'yxatdan o'chirish" : "Ro'yxatga qo'shish"}
