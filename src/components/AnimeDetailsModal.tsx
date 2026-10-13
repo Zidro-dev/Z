@@ -157,7 +157,7 @@ export const AnimeDetailsModal: React.FC<AnimeDetailsModalProps> = ({
           <div>
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-bold text-white uppercase tracking-wider">
-                Qismlar ({anime.episodes.length})
+                Qismlar ro'yxati (Jami {anime.totalEpisodes} ta qism)
               </h3>
             </div>
 

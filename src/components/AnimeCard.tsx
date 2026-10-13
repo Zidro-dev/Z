@@ -69,8 +69,8 @@ export const AnimeCard: React.FC<AnimeCardProps> = ({
           </div>
 
           <div className="text-center">
-            <p className="text-[11px] text-neutral-300 font-medium">
-              {anime.episodes.length} ta qism yuklangan
+            <p className="text-[11px] text-neutral-200 font-bold font-mono tabular-nums">
+              Jami: {anime.totalEpisodes} qism ({anime.episodes.length} qism ochiq)
             </p>
           </div>
         </div>
@@ -107,7 +107,7 @@ export const AnimeCard: React.FC<AnimeCardProps> = ({
           <span aria-hidden="true">·</span>
           <span>{anime.genres[0]}</span>
           <span aria-hidden="true">·</span>
-          <span>{anime.year}</span>
+          <span className="font-mono tabular-nums">{anime.totalEpisodes} qism</span>
         </div>
       </div>
     </div>
