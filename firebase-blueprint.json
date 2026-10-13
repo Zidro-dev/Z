@@ -1,0 +1,79 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User account profile with display preferences and membership status",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "avatar": { "type": "string" },
+        "favoriteAnime": { "type": "string" },
+        "isMegaFan": { "type": "boolean" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "email", "displayName"]
+    },
+    "WatchlistItem": {
+      "title": "WatchlistItem",
+      "description": "Anime saved in user personal watchlist",
+      "type": "object",
+      "properties": {
+        "animeId": { "type": "string" },
+        "addedAt": { "type": "string" }
+      },
+      "required": ["animeId"]
+    },
+    "WatchHistoryItem": {
+      "title": "WatchHistoryItem",
+      "description": "User episode playback progress",
+      "type": "object",
+      "properties": {
+        "animeId": { "type": "string" },
+        "episodeNumber": { "type": "number" },
+        "progressSec": { "type": "number" },
+        "durationSec": { "type": "number" },
+        "lastWatchedAt": { "type": "number" }
+      },
+      "required": ["animeId", "episodeNumber", "progressSec"]
+    },
+    "Comment": {
+      "title": "Comment",
+      "description": "User review or comment on an anime episode",
+      "type": "object",
+      "properties": {
+        "animeId": { "type": "string" },
+        "episodeNumber": { "type": "number" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userAvatar": { "type": "string" },
+        "text": { "type": "string" },
+        "rating": { "type": "number" },
+        "likes": { "type": "number" },
+        "createdAt": { "type": "string" },
+        "isMegaFan": { "type": "boolean" },
+        "isSpoiler": { "type": "boolean" }
+      },
+      "required": ["animeId", "episodeNumber", "userId", "text"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profile document"
+    },
+    "/users/{userId}/watchlist/{animeId}": {
+      "schema": "WatchlistItem",
+      "description": "User saved anime"
+    },
+    "/users/{userId}/history/{historyId}": {
+      "schema": "WatchHistoryItem",
+      "description": "User watch progress"
+    },
+    "/comments/{commentId}": {
+      "schema": "Comment",
+      "description": "Public comments on episodes"
+    }
+  }
+}

@@ -7,6 +7,9 @@ interface HeaderProps {
   onOpenSearch: () => void;
   onOpenWatchlist: () => void;
   onOpenPremium: () => void;
+  onOpenAuth: () => void;
+  onOpenProfile: () => void;
+  userProfile?: { displayName: string; avatar: string } | null;
   isMegaFan: boolean;
   watchlistCount: number;
 }
@@ -17,6 +20,9 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenSearch,
   onOpenWatchlist,
   onOpenPremium,
+  onOpenAuth,
+  onOpenProfile,
+  userProfile,
   isMegaFan,
   watchlistCount,
 }) => {
@@ -120,6 +126,35 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-[#F47521]" />
             )}
           </button>
+
+          {/* User Profile or Sign In Button */}
+          {userProfile ? (
+            <button
+              onClick={onOpenProfile}
+              aria-label="Foydalanuvchi profili"
+              className="flex items-center gap-2 p-1 pl-1.5 pr-2.5 rounded-lg bg-[#191B22] hover:bg-[#1E232F] border border-[#232732] hover:border-[#F47521]/60 transition-colors cursor-pointer group"
+            >
+              <div className="w-6 h-6 rounded-md overflow-hidden bg-black border border-neutral-700 shrink-0">
+                <img
+                  src={userProfile.avatar}
+                  alt={userProfile.displayName}
+                  referrerPolicy="no-referrer"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <span className="text-xs font-bold text-white group-hover:text-[#F47521] line-clamp-1 max-w-[80px] sm:max-w-[110px] hidden sm:inline">
+                {userProfile.displayName}
+              </span>
+            </button>
+          ) : (
+            <button
+              onClick={onOpenAuth}
+              className="px-3 py-1.5 text-xs font-bold rounded-lg border border-[#232732] bg-[#191B22] hover:bg-[#1E232F] hover:border-neutral-500 text-white transition-colors cursor-pointer flex items-center gap-1.5"
+            >
+              <User className="w-3.5 h-3.5 text-[#F47521]" />
+              <span>Kirish</span>
+            </button>
+          )}
 
           <button
             onClick={onOpenPremium}

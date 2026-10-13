@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { Header } from './components/Header';
 import { HeroBanner } from './components/HeroBanner';
 import { AnimeRow } from './components/AnimeRow';
@@ -16,11 +17,15 @@ import { PremiumModal } from './components/PremiumModal';
 import { SimulcastCalendar } from './components/SimulcastCalendar';
 import { TopAnimeView } from './components/TopAnimeView';
 import { Footer } from './components/Footer';
+import { AuthModal } from './components/AuthModal';
+import { UserProfileModal } from './components/UserProfileModal';
 import { INITIAL_ANIME_LIST, INITIAL_COMMENTS } from './data/animeData';
 import { Anime, UserComment, WatchHistoryItem } from './types/anime';
-import { Sparkles, Flame, CheckCircle, Headphones } from 'lucide-react';
+import { Sparkles, Flame, CheckCircle } from 'lucide-react';
 
-export default function App() {
+function AniRollApp() {
+  const { user, profile, updateUserProfile } = useAuth();
+
   const [animes] = useState<Anime[]>(INITIAL_ANIME_LIST);
   const [currentTab, setCurrentTab] = useState<'home' | 'catalog' | 'simulcast' | 'watchlist' | 'top'>('home');
   const [catalogGenre, setCatalogGenre] = useState<string>('Barchasi');
@@ -47,7 +52,7 @@ export default function App() {
               animeId: 'solo-leveling',
               episodeNumber: 1,
               progressSec: 540,
-              durationSec: 1455,
+              durationSec: 1420,
               lastWatchedAt: Date.now() - 3600000,
             },
           ];
@@ -66,7 +71,7 @@ export default function App() {
     }
   });
 
-  // Mega Fan subscription persisted state
+  // Mega Fan subscription state (synced with profile if available)
   const [isMegaFan, setIsMegaFan] = useState<boolean>(() => {
     try {
       return localStorage.getItem('aniroll_megafan') === 'true';
@@ -86,7 +91,16 @@ export default function App() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isWatchlistOpen, setIsWatchlistOpen] = useState(false);
   const [isPremiumOpen, setIsPremiumOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Sync profile Mega Fan status
+  useEffect(() => {
+    if (profile?.isMegaFan !== undefined) {
+      setIsMegaFan(profile.isMegaFan);
+    }
+  }, [profile?.isMegaFan]);
 
   // Persist watchlist changes
   useEffect(() => {
@@ -177,10 +191,13 @@ export default function App() {
   const handleAddComment = (commentData: Omit<UserComment, 'id' | 'createdAt' | 'likes'>) => {
     const newComment: UserComment = {
       ...commentData,
+      userName: profile?.displayName || "Siz (Anime Muxlisi)",
+      userAvatar: profile?.displayName ? profile.displayName.slice(0, 2).toUpperCase() : 'SZ',
       id: `c-${Date.now()}`,
       createdAt: 'Hozirgina',
       likes: 0,
       userLiked: false,
+      isMegaFan: isMegaFan || Boolean(profile?.isMegaFan),
     };
     setComments((prev) => [newComment, ...prev]);
     showToast("Izohingiz muvaffaqiyatli chop etildi!");
@@ -202,16 +219,17 @@ export default function App() {
     );
   };
 
-  const handleToggleMegaFan = () => {
-    setIsMegaFan((prev) => {
-      const next = !prev;
-      showToast(
-        next
-          ? "AniRoll Mega Fan a'zoligi faollashtirildi!"
-          : "Mega Fan obunasi bekor qilindi."
-      );
-      return next;
-    });
+  const handleToggleMegaFan = async () => {
+    const next = !isMegaFan;
+    setIsMegaFan(next);
+    if (profile) {
+      await updateUserProfile({ isMegaFan: next });
+    }
+    showToast(
+      next
+        ? "AniRoll Mega Fan a'zoligi faollashtirildi!"
+        : "Mega Fan obunasi bekor qilindi."
+    );
   };
 
   const featuredAnimes = animes.filter((a) => a.isFeatured);
@@ -230,7 +248,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#0B0C0E] text-[#F2F2F2] flex flex-col font-sans selection:bg-[#F47521] selection:text-black">
       
-      {/* 3-Zone Top Navigation Bar */}
+      {/* 3-Zone Top Navigation Bar with Profile Integration */}
       <Header
         currentTab={currentTab}
         onSelectTab={(tab) => {
@@ -244,6 +262,9 @@ export default function App() {
         onOpenSearch={() => setIsSearchOpen(true)}
         onOpenWatchlist={() => setIsWatchlistOpen(true)}
         onOpenPremium={() => setIsPremiumOpen(true)}
+        onOpenAuth={() => setIsAuthModalOpen(true)}
+        onOpenProfile={() => setIsProfileModalOpen(true)}
+        userProfile={profile}
         isMegaFan={isMegaFan}
         watchlistCount={watchlistIds.length}
       />
@@ -289,7 +310,7 @@ export default function App() {
                 onViewAll={() => setCurrentTab('simulcast')}
               />
 
-              {/* Mega Fan Promotional Ribbon (Crunchyroll signature promo callout) */}
+              {/* Mega Fan Promotional Ribbon */}
               <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
                 <div className="relative rounded-2xl bg-gradient-to-r from-[#1E232F] via-[#161822] to-[#12141C] border border-[#232732] p-6 sm:p-8 overflow-hidden shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
                   <div className="space-y-2 text-center md:text-left z-10">
@@ -472,6 +493,23 @@ export default function App() {
         onToggleMegaFan={handleToggleMegaFan}
       />
 
+      {/* Authentication Modal (Login / Register / Google / Guest) */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onSuccess={() => showToast("Hisobingizga muvaffaqiyatli kirdingiz!")}
+      />
+
+      {/* User Profile Modal */}
+      <UserProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        watchlistCount={watchlistIds.length}
+        historyCount={watchHistory.length}
+        onOpenWatchlist={() => setIsWatchlistOpen(true)}
+        onOpenPremium={() => setIsPremiumOpen(true)}
+      />
+
       {/* Toast Feedback Notification */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 bg-[#191B22] border border-[#F47521]/60 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2 text-xs font-bold animate-in fade-in slide-in-from-bottom-2 duration-200">
@@ -481,5 +519,13 @@ export default function App() {
       )}
 
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AniRollApp />
+    </AuthProvider>
   );
 }
