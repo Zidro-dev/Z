@@ -24,36 +24,54 @@ export const SimulcastCalendar: React.FC<SimulcastCalendarProps> = ({
   onSelectAnime,
   onPlayAnime,
 }) => {
-  const [selectedDay, setSelectedDay] = useState<string>('sat');
+  const [selectedDay, setSelectedDay] = useState<string>('sun');
 
-  // Distribution of animes throughout week days for a rich schedule
-  const scheduleMapping: Record<string, { anime: Anime; time: string; episodeLabel: string; isAired: boolean }[]> = {
-    sat: [
-      { anime: animes[0], time: '19:30', episodeLabel: '5-qism (Premyera)', isAired: true },
-      { anime: animes[1], time: '21:00', episodeLabel: '48-qism', isAired: true },
-      { anime: animes[3], time: '22:15', episodeLabel: '56-qism', isAired: false },
-    ],
-    sun: [
-      { anime: animes[6], time: '10:30', episodeLabel: '1090-qism', isAired: true },
-      { anime: animes[4], time: '20:00', episodeLabel: '90-qism', isAired: false },
-    ],
-    mon: [
-      { anime: animes[2], time: '21:30', episodeLabel: '29-qism', isAired: true },
-    ],
-    tue: [
-      { anime: animes[7], time: '18:00', episodeLabel: '37-qism', isAired: true },
-    ],
-    wed: [
-      { anime: animes[5], time: '20:30', episodeLabel: '13-qism', isAired: false },
-    ],
-    thu: [
-      { anime: animes[1], time: '19:00', episodeLabel: 'Maxsus qism', isAired: true },
-    ],
-    fri: [
-      { anime: animes[0], time: '22:00', episodeLabel: 'Qayta namoyish', isAired: true },
-      { anime: animes[3], time: '23:30', episodeLabel: 'Tahlil va sharh', isAired: true },
-    ],
-  };
+  // Dynamic distribution of available animes across week days
+  const scheduleMapping = React.useMemo(() => {
+    const mapping: Record<string, { anime: Anime; time: string; episodeLabel: string; isAired: boolean }[]> = {
+      mon: [],
+      tue: [],
+      wed: [],
+      thu: [],
+      fri: [],
+      sat: [],
+      sun: [],
+    };
+
+    if (animes.length === 0) return mapping;
+
+    // One Piece traditionally airs on Sunday morning in Japan
+    const onePiece = animes.find((a) => a.id === 'one-piece') || animes[0];
+    if (onePiece) {
+      mapping.sun.push({
+        anime: onePiece,
+        time: '09:30',
+        episodeLabel: `${onePiece.episodes[onePiece.episodes.length - 1]?.episodeNumber || 1094}-qism (Premyera)`,
+        isAired: true,
+      });
+      mapping.sat.push({
+        anime: onePiece,
+        time: '20:00',
+        episodeLabel: "O'tgan qism sharhi",
+        isAired: true,
+      });
+    }
+
+    // Distribute any additional animes added by admin
+    const days: (keyof typeof mapping)[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+    animes.forEach((anime, idx) => {
+      if (anime.id === 'one-piece') return;
+      const targetDay = days[idx % days.length];
+      mapping[targetDay].push({
+        anime,
+        time: `${18 + (idx % 4)}:30`,
+        episodeLabel: `${anime.episodes.length || 1}-qism`,
+        isAired: idx % 2 === 0,
+      });
+    });
+
+    return mapping;
+  }, [animes]);
 
   const currentSchedule = (scheduleMapping[selectedDay] || []).filter(item => Boolean(item.anime));
 

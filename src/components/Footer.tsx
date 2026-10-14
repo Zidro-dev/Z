@@ -45,7 +45,7 @@ export const Footer: React.FC<FooterProps> = ({ onSelectTab, onOpenPremium }) =>
                   onClick={() => onSelectTab('catalog')}
                   className="hover:text-white transition-colors cursor-pointer"
                 >
-                  Katalog
+                  Barcha Animelar
                 </button>
               </li>
               <li>

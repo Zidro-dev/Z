@@ -10,7 +10,8 @@ import { HeroBanner } from './components/HeroBanner';
 import { AnimeRow } from './components/AnimeRow';
 import { VideoPlayerModal } from './components/VideoPlayerModal';
 import { AnimeDetailsModal } from './components/AnimeDetailsModal';
-import { CatalogView } from './components/CatalogView';
+import { AllAnimesView } from './components/AllAnimesView';
+import { AddAnimeModal } from './components/AddAnimeModal';
 import { WatchlistModal } from './components/WatchlistModal';
 import { SearchModal } from './components/SearchModal';
 import { PremiumModal } from './components/PremiumModal';
@@ -40,21 +41,21 @@ function AniRollApp() {
 
   const [baseAnimes, setBaseAnimes] = useState<Anime[]>(() => {
     try {
-      const saved = localStorage.getItem('aniroll_custom_animes');
-      if (saved) {
-        const parsed = JSON.parse(saved);
+      const savedV2 = localStorage.getItem('aniroll_custom_animes_v2');
+      if (savedV2) {
+        const parsed = JSON.parse(savedV2);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return INITIAL_ANIME_LIST.map((initial) => {
-            const found = parsed.find((p: any) => p.id === initial.id);
-            return found ? { ...initial, ...found } : initial;
-          });
+          return parsed;
         }
       }
+      // Clean up legacy v1 storage that had removed animes
+      localStorage.removeItem('aniroll_custom_animes');
     } catch {}
     return INITIAL_ANIME_LIST;
   });
 
   const [editingAnime, setEditingAnime] = useState<Anime | null>(null);
+  const [isAddAnimeOpen, setIsAddAnimeOpen] = useState(false);
   const [currentTab, setCurrentTab] = useState<'home' | 'catalog' | 'simulcast' | 'watchlist' | 'top'>('home');
   const [catalogGenre, setCatalogGenre] = useState<string>('Barchasi');
   const [catalogDubOnly, setCatalogDubOnly] = useState<boolean>(false);
@@ -79,9 +80,9 @@ function AniRollApp() {
   const [watchlistIds, setWatchlistIds] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem('aniroll_watchlist');
-      return saved ? JSON.parse(saved) : ['solo-leveling', 'frieren'];
+      return saved ? JSON.parse(saved) : ['one-piece'];
     } catch {
-      return ['solo-leveling', 'frieren'];
+      return ['one-piece'];
     }
   });
 
@@ -93,10 +94,10 @@ function AniRollApp() {
         ? JSON.parse(saved)
         : [
             {
-              animeId: 'solo-leveling',
-              episodeNumber: 1,
+              animeId: 'one-piece',
+              episodeNumber: 1089,
               progressSec: 540,
-              durationSec: 1420,
+              durationSec: 1430,
               lastWatchedAt: Date.now() - 3600000,
             },
           ];
@@ -300,24 +301,39 @@ function AniRollApp() {
     showToast(`"${newEp.titleUz}" qismi muvaffaqiyatli qo'shildi!`);
   };
 
-  // Fetch remote anime customizations from Firestore
+  // Fetch remote anime customizations & added animes from Firestore
   useEffect(() => {
     const fetchRemoteCustomizations = async () => {
       try {
         const snap = await getDocs(collection(db, 'anime_customizations'));
         if (!snap.empty) {
-          const overrides: Record<string, Partial<Anime>> = {};
+          const overrides: Record<string, any> = {};
+          const remoteNewAnimes: Anime[] = [];
+
           snap.forEach((docSnap) => {
-            overrides[docSnap.id] = docSnap.data() as Partial<Anime>;
+            const data = docSnap.data();
+            overrides[docSnap.id] = data;
+            // If it's a new anime added remotely that isn't in baseAnimes
+            if (data.title && data.episodes && !INITIAL_ANIME_LIST.some((a) => a.id === docSnap.id)) {
+              remoteNewAnimes.push({ id: docSnap.id, ...data } as Anime);
+            }
           });
-          setBaseAnimes((prev) =>
-            prev.map((anime) => {
+
+          setBaseAnimes((prev) => {
+            const existingIds = new Set(prev.map((a) => a.id));
+            const merged = prev.map((anime) => {
               if (overrides[anime.id]) {
                 return { ...anime, ...overrides[anime.id] };
               }
               return anime;
-            })
-          );
+            });
+            const freshAnimes = remoteNewAnimes.filter((a) => !existingIds.has(a.id));
+            const combined = [...freshAnimes, ...merged];
+            try {
+              localStorage.setItem('aniroll_custom_animes_v2', JSON.stringify(combined));
+            } catch {}
+            return combined;
+          });
         }
       } catch (e) {
         console.warn("Firestore anime customizations fetch skipped:", e);
@@ -326,12 +342,41 @@ function AniRollApp() {
     fetchRemoteCustomizations();
   }, []);
 
+  // Add a brand new anime (Moved to Barcha Animelar section)
+  const handleAddAnime = async (newAnime: Anime) => {
+    setBaseAnimes((prev) => {
+      const next = [newAnime, ...prev.filter((a) => a.id !== newAnime.id)];
+      try {
+        localStorage.setItem('aniroll_custom_animes_v2', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+
+    try {
+      const animeDocRef = doc(db, 'anime_customizations', newAnime.id);
+      await setDoc(
+        animeDocRef,
+        {
+          ...newAnime,
+          createdAt: new Date().toISOString(),
+          addedBy: profile?.displayName || (isOwner ? 'Owner' : 'Admin'),
+        },
+        { merge: true }
+      );
+    } catch (err) {
+      console.warn("Firestore anime add error:", err);
+    }
+
+    setIsAddAnimeOpen(false);
+    showToast(`"${newAnime.title}" barcha animelar safiga qo'shildi!`);
+  };
+
   // Save anime modifications (Total episodes, poster image, metadata)
   const handleSaveAnimeEdit = async (updatedAnime: Anime) => {
     setBaseAnimes((prev) => {
       const next = prev.map((a) => (a.id === updatedAnime.id ? updatedAnime : a));
       try {
-        localStorage.setItem('aniroll_custom_animes', JSON.stringify(next));
+        localStorage.setItem('aniroll_custom_animes_v2', JSON.stringify(next));
       } catch {}
       return next;
     });
@@ -555,15 +600,16 @@ function AniRollApp() {
           </div>
         )}
 
-        {/* Catalog Tab */}
+        {/* All Animes (Barcha Animelar) Tab */}
         {currentTab === 'catalog' && (
-          <CatalogView
+          <AllAnimesView
             animes={animes}
             onSelectAnime={(anime) => setSelectedAnimeDetails(anime)}
             onPlayAnime={handlePlayAnime}
             isInWatchlist={isInWatchlist}
             onToggleWatchlist={handleToggleWatchlistFromCard}
             onEditAnime={(anime) => setEditingAnime(anime)}
+            onOpenAddAnime={() => setIsAddAnimeOpen(true)}
             initialGenre={catalogGenre}
             initialDubOnly={catalogDubOnly}
           />
@@ -711,6 +757,16 @@ function AniRollApp() {
           animes={animes}
           onEpisodeAdded={handleEpisodeAdded}
           onEditAnime={(anime) => setEditingAnime(anime)}
+          onOpenAddAnime={() => setIsAddAnimeOpen(true)}
+        />
+      )}
+
+      {/* Add New Anime Modal */}
+      {isAddAnimeOpen && (
+        <AddAnimeModal
+          isOpen={isAddAnimeOpen}
+          onClose={() => setIsAddAnimeOpen(false)}
+          onAddAnime={handleAddAnime}
         />
       )}
 

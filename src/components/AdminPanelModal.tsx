@@ -28,6 +28,7 @@ interface AdminPanelModalProps {
   animes: Anime[];
   onEpisodeAdded: (animeId: string, newEpisode: Episode) => void;
   onEditAnime: (anime: Anime) => void;
+  onOpenAddAnime?: () => void;
 }
 
 export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
@@ -36,6 +37,7 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
   animes,
   onEpisodeAdded,
   onEditAnime,
+  onOpenAddAnime,
 }) => {
   const {
     profile,
@@ -53,7 +55,7 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
   const [animeSearchQuery, setAnimeSearchQuery] = useState('');
 
   // New episode form state
-  const [selectedAnimeId, setSelectedAnimeId] = useState<string>(animes[0]?.id || 'solo-leveling');
+  const [selectedAnimeId, setSelectedAnimeId] = useState<string>(animes[0]?.id || 'one-piece');
   const [epNumber, setEpNumber] = useState<number>(13);
   const [epTitle, setEpTitle] = useState('');
   const [epTitleUz, setEpTitleUz] = useState('');
@@ -480,15 +482,31 @@ export const AdminPanelModal: React.FC<AdminPanelModalProps> = ({
                   </p>
                 </div>
 
-                <div className="relative w-full sm:w-64">
-                  <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    value={animeSearchQuery}
-                    onChange={(e) => setAnimeSearchQuery(e.target.value)}
-                    placeholder="Anime qidirish..."
-                    className="w-full bg-[#12141A] border border-[#232732] rounded-xl pl-8 pr-3 py-1.5 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-[#F47521]"
-                  />
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  {onOpenAddAnime && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onClose();
+                        onOpenAddAnime();
+                      }}
+                      className="px-3 py-1.5 bg-[#F47521] hover:bg-[#FF8533] text-black text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all shadow-xs cursor-pointer whitespace-nowrap shrink-0"
+                    >
+                      <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                      <span>+ Anime Qo'shish</span>
+                    </button>
+                  )}
+
+                  <div className="relative w-full sm:w-64">
+                    <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      value={animeSearchQuery}
+                      onChange={(e) => setAnimeSearchQuery(e.target.value)}
+                      placeholder="Anime qidirish..."
+                      className="w-full bg-[#12141A] border border-[#232732] rounded-xl pl-8 pr-3 py-1.5 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-[#F47521]"
+                    />
+                  </div>
                 </div>
               </div>
 

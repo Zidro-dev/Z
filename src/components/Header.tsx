@@ -69,7 +69,7 @@ export const Header: React.FC<HeaderProps> = ({
                 : 'text-neutral-400'
             }`}
           >
-            Katalog
+            Barcha Animelar
           </button>
 
           <button
