@@ -228,10 +228,17 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
     setShowEpisodesDrawer(false);
   };
 
+  const currentEpIndex = anime.episodes.findIndex((e) => e.id === activeEpisode.id);
+
   const handleNextEpisode = () => {
-    const nextEpIndex = anime.episodes.findIndex((e) => e.id === activeEpisode.id) + 1;
-    if (nextEpIndex < anime.episodes.length) {
-      handleEpisodeSelect(anime.episodes[nextEpIndex]);
+    if (currentEpIndex < anime.episodes.length - 1) {
+      handleEpisodeSelect(anime.episodes[currentEpIndex + 1]);
+    }
+  };
+
+  const handlePrevEpisode = () => {
+    if (currentEpIndex > 0) {
+      handleEpisodeSelect(anime.episodes[currentEpIndex - 1]);
     }
   };
 
@@ -330,6 +337,7 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
             {/* Video Source: Streamtape Embed or HTML5 Video */}
             {isStreamtape ? (
               <iframe
+                key={embedUrl}
                 src={embedUrl}
                 title={`${anime.title} — ${activeEpisode.episodeNumber}-qism`}
                 allowFullScreen
@@ -635,6 +643,58 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
                 {anime.dubActorsUz.join(', ')}
               </div>
             )}
+
+            {/* Quick Episode Selector UI (Buttons) */}
+            <div className="pt-3 border-t border-[#232732] space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-neutral-300 uppercase tracking-wider flex items-center gap-1.5">
+                  <Play className="w-3.5 h-3.5 text-[#F47521] fill-[#F47521]" />
+                  Qismlar ({anime.episodes.length} ta):
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    disabled={currentEpIndex <= 0}
+                    onClick={handlePrevEpisode}
+                    aria-label="Oldingi qism"
+                    className="px-2.5 py-1 rounded bg-[#1E232F] hover:bg-[#282E3E] disabled:opacity-30 disabled:hover:bg-[#1E232F] text-neutral-300 hover:text-white transition-colors cursor-pointer disabled:cursor-not-allowed text-xs font-semibold"
+                  >
+                    ← Oldingi
+                  </button>
+                  <button
+                    type="button"
+                    disabled={currentEpIndex >= anime.episodes.length - 1}
+                    onClick={handleNextEpisode}
+                    aria-label="Keyingi qism"
+                    className="px-2.5 py-1 rounded bg-[#1E232F] hover:bg-[#282E3E] disabled:opacity-30 disabled:hover:bg-[#1E232F] text-neutral-300 hover:text-white transition-colors cursor-pointer disabled:cursor-not-allowed text-xs font-semibold"
+                  >
+                    Keyingi →
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {anime.episodes.map((ep) => {
+                  const isActive = ep.id === activeEpisode.id;
+                  return (
+                    <button
+                      key={ep.id}
+                      type="button"
+                      onClick={() => handleEpisodeSelect(ep)}
+                      aria-label={`${ep.episodeNumber}-qismni tomosha qilish`}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                        isActive
+                          ? 'bg-[#F47521] text-black shadow-md shadow-[#F47521]/30 ring-2 ring-[#F47521]'
+                          : 'bg-[#191B22] text-neutral-300 hover:text-white hover:bg-[#1E232F] border border-[#232732]'
+                      }`}
+                    >
+                      {isActive && <Play className="w-3 h-3 fill-black text-black" />}
+                      <span>{ep.episodeNumber}-qism</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
 
           {/* Comments Section */}
