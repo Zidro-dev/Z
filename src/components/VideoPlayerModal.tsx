@@ -56,6 +56,10 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
     anime.episodes[0];
 
   const [activeEpisode, setActiveEpisode] = useState<Episode>(currentEp);
+  const isStreamtape = Boolean(activeEpisode.videoUrl?.includes('streamtape.com'));
+  const embedUrl = isStreamtape
+    ? activeEpisode.videoUrl.replace('streamtape.com/v/', 'streamtape.com/e/')
+    : activeEpisode.videoUrl;
   const [isPlaying, setIsPlaying] = useState(true);
   const [currentTime, setCurrentTime] = useState(initialProgressSec);
   const [duration, setDuration] = useState(currentEp?.durationSec || 1440);
@@ -323,8 +327,16 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
             onMouseMove={handleMouseMove}
             className="relative aspect-video w-full bg-black rounded-xl overflow-hidden shadow-2xl border border-[#232732] group"
           >
-            {/* HTML5 Video Source */}
-            {!videoError ? (
+            {/* Video Source: Streamtape Embed or HTML5 Video */}
+            {isStreamtape ? (
+              <iframe
+                src={embedUrl}
+                title={`${anime.title} — ${activeEpisode.episodeNumber}-qism`}
+                allowFullScreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                className="w-full h-full border-0 rounded-xl"
+              />
+            ) : !videoError ? (
               <video
                 ref={videoRef}
                 src={activeEpisode.videoUrl}
@@ -358,8 +370,8 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
               </div>
             )}
 
-            {/* "Skip Intro" Button (Crunchyroll signature) */}
-            {isIntroTime && (
+            {/* "Skip Intro" Button (HTML5 video only) */}
+            {!isStreamtape && isIntroTime && (
               <button
                 onClick={handleSkipIntro}
                 className="absolute right-6 bottom-20 z-30 px-4 py-2 bg-black/85 hover:bg-black text-[#F47521] border border-[#F47521]/50 rounded-lg text-xs font-black flex items-center gap-2 backdrop-blur-md shadow-xl transition-all transform hover:scale-105 cursor-pointer"
@@ -368,6 +380,9 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
                 <span>Kirish qismini o'tkazish (Skip Intro)</span>
               </button>
             )}
+
+            {!isStreamtape && (
+              <>
 
             {/* Center Big Play/Pause indicator on click */}
             <div
@@ -571,7 +586,9 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
 
               </div>
             </div>
-          </div>
+          </>
+        )}
+      </div>
 
           {/* Episode Info & Watchlist Action */}
           <div className="bg-[#141519] border border-[#232732] rounded-xl p-5 space-y-4">

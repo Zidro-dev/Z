@@ -42,7 +42,7 @@ export const INITIAL_ANIME_LIST: Anime[] = [
         durationSec: 1485,
         thumbnail: 'https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx21-ELSYx3yMPcKM.jpg',
         description: "Sharbat bochkasidan otilib chiqqan yosh bola Manki D. Luffi Alvida qaroqchilar kemasiga tushadi va Kobi bilan do'stlashadi.",
-        videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+        videoUrl: 'https://streamtape.com/v/Wg0xd8vp6pTb7Lm/One_Piece_[0001]_[HEVC].mkv',
         releaseDate: '1999-10-20',
         introStartSec: 90,
         introEndSec: 180,
