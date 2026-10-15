@@ -673,7 +673,7 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-2">
+              <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-10 gap-1.5 sm:gap-2 max-h-48 overflow-y-auto pr-1">
                 {anime.episodes.map((ep) => {
                   const isActive = ep.id === activeEpisode.id;
                   return (
@@ -682,14 +682,15 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
                       type="button"
                       onClick={() => handleEpisodeSelect(ep)}
                       aria-label={`${ep.episodeNumber}-qismni tomosha qilish`}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                      title={`${ep.episodeNumber}-qism: ${ep.titleUz}`}
+                      className={`py-2 px-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1 ${
                         isActive
                           ? 'bg-[#F47521] text-black shadow-md shadow-[#F47521]/30 ring-2 ring-[#F47521]'
                           : 'bg-[#191B22] text-neutral-300 hover:text-white hover:bg-[#1E232F] border border-[#232732]'
                       }`}
                     >
-                      {isActive && <Play className="w-3 h-3 fill-black text-black" />}
-                      <span>{ep.episodeNumber}-qism</span>
+                      {isActive && <Play className="w-2.5 h-2.5 fill-black text-black shrink-0" />}
+                      <span className="truncate">{ep.episodeNumber}-qism</span>
                     </button>
                   );
                 })}

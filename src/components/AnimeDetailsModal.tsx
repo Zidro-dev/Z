@@ -170,8 +170,11 @@ export const AnimeDetailsModal: React.FC<AnimeDetailsModalProps> = ({
           {/* Episodes List Section */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider">
-                Qismlar ro'yxati (Jami {anime.totalEpisodes} ta qism)
+              <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                <span>Qismlar ro'yxati</span>
+                <span className="text-xs font-mono font-normal text-[#F47521] bg-[#F47521]/10 px-2 py-0.5 rounded-full border border-[#F47521]/20">
+                  {anime.episodes.length} ta qism mavjud
+                </span>
               </h3>
             </div>
 
